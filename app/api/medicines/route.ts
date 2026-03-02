@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
 import {
-  addMedicine,
-  getMedicines,
-  getMedicinesByPharmacy,
-  searchMedicines,
-} from "@/lib/data-store"
+  addMedicineInDb,
+  getMedicinesByPharmacyFromDb,
+  getMedicinesFromDb,
+  searchMedicinesFromDb,
+} from "@/backend/medicine-prebooking-db"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -12,14 +12,14 @@ export async function GET(request: Request) {
   const pharmacyId = searchParams.get("pharmacyId")
 
   if (query !== null) {
-    return NextResponse.json(searchMedicines(query))
+    return NextResponse.json(await searchMedicinesFromDb(query))
   }
 
   if (pharmacyId) {
-    return NextResponse.json(getMedicinesByPharmacy(pharmacyId))
+    return NextResponse.json(await getMedicinesByPharmacyFromDb(pharmacyId))
   }
 
-  return NextResponse.json(getMedicines())
+  return NextResponse.json(await getMedicinesFromDb())
 }
 
 export async function POST(request: Request) {
@@ -28,17 +28,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
   }
 
-  if (!body.name || body.quantity === undefined || !body.pharmacyId) {
+  if (!body.name || body.quantity === undefined || !body.pharmacyId || !body.actorId) {
     return NextResponse.json(
-      { error: "name, quantity, and pharmacyId are required" },
+      { error: "name, quantity, pharmacyId, and actorId are required" },
       { status: 400 }
     )
   }
 
-  const medicine = addMedicine(
-    String(body.name),
-    Number(body.quantity),
-    String(body.pharmacyId)
-  )
-  return NextResponse.json(medicine, { status: 201 })
+  try {
+    const medicine = await addMedicineInDb({
+      name: String(body.name),
+      quantity: Number(body.quantity),
+      pharmacyId: String(body.pharmacyId),
+      actorId: String(body.actorId),
+    })
+    return NextResponse.json(medicine, { status: 201 })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to add medicine"
+    const status =
+      message.includes("Only pharmacist") || message.includes("pharmacy")
+        ? 403
+        : 500
+    return NextResponse.json({ error: message }, { status })
+  }
 }

@@ -4,6 +4,11 @@ import path from "node:path"
 import { MongoClient } from "mongodb"
 
 const validRoles = new Set(["doctor", "health_worker", "pharmacist"])
+const pharmaciesById = {
+  "pharmacy-1": "Jan Aushadhi Kendra - Moga",
+  "pharmacy-2": "Rural Health Pharmacy - Bathinda",
+  "pharmacy-3": "Gram Seva Medical Store - Sangrur",
+}
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return
@@ -46,7 +51,7 @@ function hashPassword(password) {
 
 function usage() {
   console.log(
-    "Usage: npm run db:grant-access -- --name \"Name\" --email \"mail@example.com\" --password \"Secret123\" --role doctor [--phone \"+91...\"] [--inactive]"
+    "Usage: npm run db:grant-access -- --name \"Name\" --email \"mail@example.com\" --password \"Secret123\" --role doctor [--phone \"+91...\"] [--pharmacyId pharmacy-1] [--inactive]"
   )
 }
 
@@ -61,14 +66,24 @@ let email = args.email
 let password = args.password
 let role = args.role
 const phone = args.phone
+let pharmacyIdArg = args.pharmacyId
 const isActive = !args.inactive
 
 if (!name || !email || !password || !role) {
   if (rawArgv.length >= 4 && !rawArgv.some((token) => token.startsWith("--"))) {
-    role = rawArgv[rawArgv.length - 1]
-    password = rawArgv[rawArgv.length - 2]
-    email = rawArgv[rawArgv.length - 3]
-    name = rawArgv.slice(0, rawArgv.length - 3).join(" ")
+    const lastToken = rawArgv[rawArgv.length - 1]
+    if (lastToken in pharmaciesById && rawArgv.length >= 5) {
+      pharmacyIdArg = lastToken
+      role = rawArgv[rawArgv.length - 2]
+      password = rawArgv[rawArgv.length - 3]
+      email = rawArgv[rawArgv.length - 4]
+      name = rawArgv.slice(0, rawArgv.length - 4).join(" ")
+    } else {
+      role = rawArgv[rawArgv.length - 1]
+      password = rawArgv[rawArgv.length - 2]
+      email = rawArgv[rawArgv.length - 3]
+      name = rawArgv.slice(0, rawArgv.length - 3).join(" ")
+    }
   }
 }
 
@@ -79,6 +94,16 @@ if (!name || !email || !password || !role) {
 
 if (!validRoles.has(role)) {
   console.error("Invalid role. Use one of: doctor, health_worker, pharmacist")
+  process.exit(1)
+}
+
+if (role === "pharmacist" && !pharmacyIdArg) {
+  console.error("For pharmacist role, --pharmacyId is required (pharmacy-1|pharmacy-2|pharmacy-3).")
+  process.exit(1)
+}
+
+if (pharmacyIdArg && !(pharmacyIdArg in pharmaciesById)) {
+  console.error("Invalid pharmacyId. Use pharmacy-1, pharmacy-2, or pharmacy-3.")
   process.exit(1)
 }
 
@@ -99,6 +124,7 @@ try {
   const existing = await users.findOne({ email: normalizedEmail })
   const id = existing?.id ?? `usr-${crypto.randomUUID()}`
 
+  const pharmacyName = pharmacyIdArg ? pharmaciesById[pharmacyIdArg] : null
   await users.updateOne(
     { email: normalizedEmail },
     {
@@ -108,6 +134,8 @@ try {
         passwordHash: hashPassword(password),
         role,
         phone: phone ? phone.trim() : null,
+        pharmacyId: role === "pharmacist" ? pharmacyIdArg : null,
+        pharmacyName: role === "pharmacist" ? pharmacyName : null,
         isActive,
       },
       $setOnInsert: {

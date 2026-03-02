@@ -9,6 +9,8 @@ interface UserDocument {
   passwordHash: string
   role: UserRole
   phone: string | null
+  pharmacyId: string | null
+  pharmacyName: string | null
   isActive: boolean
   createdAt: Date
 }
@@ -54,6 +56,10 @@ async function ensureSchema() {
       const collection = await getUsersCollection()
       await collection.createIndex({ email: 1 }, { unique: true })
       await collection.createIndex({ role: 1, isActive: 1 })
+      await collection.updateMany(
+        { pharmacyId: { $exists: false } },
+        { $set: { pharmacyId: null, pharmacyName: null } }
+      )
     })()
   }
   await global.__authMongoInitPromise
@@ -66,6 +72,8 @@ function toPublicUser(doc: UserDocument): User {
     email: doc.email,
     role: doc.role,
     phone: doc.phone ?? undefined,
+    pharmacyId: doc.pharmacyId ?? undefined,
+    pharmacyName: doc.pharmacyName ?? undefined,
   }
 }
 
@@ -91,6 +99,8 @@ export async function upsertAuthUser(input: {
   password: string
   role: UserRole
   phone?: string
+  pharmacyId?: string
+  pharmacyName?: string
   isActive?: boolean
 }) {
   await ensureSchema()
@@ -114,6 +124,9 @@ export async function upsertAuthUser(input: {
         passwordHash: hashed,
         role: input.role,
         phone: input.phone?.trim() || null,
+        pharmacyId: input.role === "pharmacist" ? input.pharmacyId?.trim() || null : null,
+        pharmacyName:
+          input.role === "pharmacist" ? input.pharmacyName?.trim() || null : null,
         isActive: input.isActive === false ? false : true,
       },
       $setOnInsert: {
@@ -153,4 +166,11 @@ export async function getAuthUsersByRole(role?: UserRole): Promise<User[]> {
   const query = role ? { role, isActive: true } : { isActive: true }
   const docs = await collection.find(query).sort({ name: 1 }).toArray()
   return docs.map(toPublicUser)
+}
+
+export async function getAuthUserById(userId: string): Promise<User | null> {
+  await ensureSchema()
+  const collection = await getUsersCollection()
+  const doc = await collection.findOne({ id: userId, isActive: true })
+  return doc ? toPublicUser(doc) : null
 }

@@ -9,7 +9,6 @@ import {
   addMedicine,
   respondToPrebooking,
 } from "@/lib/api-client"
-import { mockPharmacies } from "@/lib/mock-data"
 import type { Medicine, PrebookingRequest } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -52,10 +51,11 @@ export function PharmacyDashboard() {
   const [editQuantity, setEditQuantity] = useState("")
   const [availabilityDate, setAvailabilityDate] = useState("")
 
-  // Get the pharmacy ID for this pharmacist (using first pharmacy for demo)
-  const pharmacyId = mockPharmacies[0].id
+  const pharmacyId = user?.pharmacyId
+  const pharmacyName = user?.pharmacyName || "Assigned Pharmacy"
 
   const loadData = async () => {
+    if (!pharmacyId) return
     try {
       const [medicineData, prebookingData] = await Promise.all([
         getMedicinesByPharmacy(pharmacyId),
@@ -71,16 +71,21 @@ export function PharmacyDashboard() {
 
   useEffect(() => {
     void loadData()
-  }, [])
+  }, [pharmacyId])
 
   const pendingPrebookings = prebookings.filter((p) => p.status === "pending")
   const availableMedicines = medicines.filter((m) => m.quantity > 0)
   const outOfStockMedicines = medicines.filter((m) => m.quantity === 0)
 
   const handleAddMedicine = async () => {
-    if (!newMedicineName || !newMedicineQuantity) return
+    if (!newMedicineName || !newMedicineQuantity || !user || !pharmacyId) return
 
-    await addMedicine(newMedicineName, parseInt(newMedicineQuantity, 10), pharmacyId)
+    await addMedicine(
+      newMedicineName,
+      parseInt(newMedicineQuantity, 10),
+      pharmacyId,
+      user.id
+    )
     setNewMedicineName("")
     setNewMedicineQuantity("")
     setShowAddMedicine(false)
@@ -88,20 +93,21 @@ export function PharmacyDashboard() {
   }
 
   const handleUpdateStock = async () => {
-    if (!editingMedicine || !editQuantity) return
+    if (!editingMedicine || !editQuantity || !user) return
 
-    await updateMedicineStock(editingMedicine.id, parseInt(editQuantity, 10))
+    await updateMedicineStock(editingMedicine.id, parseInt(editQuantity, 10), user.id)
     setEditingMedicine(null)
     setEditQuantity("")
     void loadData()
   }
 
   const handleRespond = async (status: "confirmed" | "rejected") => {
-    if (!respondingTo) return
+    if (!respondingTo || !user) return
 
     await respondToPrebooking(respondingTo.id, {
       status,
       expectedAvailabilityDate: status === "confirmed" ? availabilityDate : undefined,
+      actorId: user.id,
     })
     setRespondingTo(null)
     setAvailabilityDate("")
@@ -124,9 +130,19 @@ export function PharmacyDashboard() {
           Welcome, {user?.name}
         </h1>
         <p className="text-muted-foreground">
-          Pharmacy Dashboard - {mockPharmacies[0].name}
+          Pharmacy Dashboard - {pharmacyName}
         </p>
       </div>
+
+      {!pharmacyId && (
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-destructive">
+              Pharmacist account is not assigned to a pharmacy. Contact admin.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">

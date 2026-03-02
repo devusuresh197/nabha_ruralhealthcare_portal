@@ -78,6 +78,7 @@ export function MedicineSearch({ onPrebookingCreated }: MedicineSearchProps) {
       healthWorkerName: user.name,
       pharmacyId: selectedMedicine.pharmacyId,
       pharmacyName: selectedMedicine.pharmacyName,
+      actorId: user.id,
     })
 
     setIsSubmitting(false)

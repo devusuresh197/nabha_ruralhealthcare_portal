@@ -73,11 +73,13 @@ export interface CreatePrebookingPayload {
   healthWorkerName: string
   pharmacyId: string
   pharmacyName: string
+  actorId: string
 }
 
 export interface RespondToPrebookingPayload {
   status: "confirmed" | "rejected"
   expectedAvailabilityDate?: string
+  actorId: string
 }
 
 export async function loginUser(
@@ -133,20 +135,26 @@ export async function searchMedicines(query: string): Promise<MedicineSearchResu
 export async function addMedicine(
   name: string,
   quantity: number,
-  pharmacyId: string
+  pharmacyId: string,
+  actorId: string
 ): Promise<Medicine> {
   return apiRequest<Medicine>("/api/medicines", "POST", {
     name,
     quantity,
     pharmacyId,
+    actorId,
   })
 }
 
 export async function updateMedicineStock(
   medicineId: string,
-  quantity: number
+  quantity: number,
+  actorId: string
 ): Promise<Medicine> {
-  return apiRequest<Medicine>(`/api/medicines/${medicineId}`, "PATCH", { quantity })
+  return apiRequest<Medicine>(`/api/medicines/${medicineId}`, "PATCH", {
+    quantity,
+    actorId,
+  })
 }
 
 export async function getPrebookingsByHealthWorker(

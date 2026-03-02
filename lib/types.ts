@@ -6,6 +6,8 @@ export interface User {
   email: string
   role: UserRole
   phone?: string
+  pharmacyId?: string
+  pharmacyName?: string
 }
 
 export type RiskLevel = "Low" | "Medium" | "High"
