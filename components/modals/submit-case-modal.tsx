@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { createCase } from "@/lib/data-store"
+import { createCase } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -89,12 +89,9 @@ export function SubmitCaseModal({ open, onClose, onSuccess }: SubmitCaseModalPro
 
     setIsSubmitting(true)
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 800))
-
-    createCase({
+    await createCase({
       patientName,
-      patientAge: parseInt(patientAge),
+      patientAge: parseInt(patientAge, 10),
       patientGender,
       patientPhone,
       patientVillage,
@@ -102,8 +99,8 @@ export function SubmitCaseModal({ open, onClose, onSuccess }: SubmitCaseModalPro
       vitals: {
         temperature: temperature ? parseFloat(temperature) : undefined,
         bloodPressure: bloodPressure || undefined,
-        pulseRate: pulseRate ? parseInt(pulseRate) : undefined,
-        oxygenLevel: oxygenLevel ? parseInt(oxygenLevel) : undefined,
+        pulseRate: pulseRate ? parseInt(pulseRate, 10) : undefined,
+        oxygenLevel: oxygenLevel ? parseInt(oxygenLevel, 10) : undefined,
       },
       additionalNotes: additionalNotes || undefined,
       healthWorkerId: user.id,

@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context"
 import {
   getCasesByHealthWorker,
   getPrebookingsByHealthWorker,
-} from "@/lib/data-store"
+} from "@/lib/api-client"
 import type { PatientCase, PrebookingRequest } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,15 +32,24 @@ export function HealthWorkerDashboard() {
   const [selectedCase, setSelectedCase] = useState<PatientCase | null>(null)
   const [activeTab, setActiveTab] = useState<"cases" | "medicine" | "prebookings">("cases")
 
-  const loadData = () => {
+  const loadData = async () => {
     if (user) {
-      setCases(getCasesByHealthWorker(user.id))
-      setPrebookings(getPrebookingsByHealthWorker(user.id))
+      try {
+        const [casesData, prebookingData] = await Promise.all([
+          getCasesByHealthWorker(user.id),
+          getPrebookingsByHealthWorker(user.id),
+        ])
+        setCases(casesData)
+        setPrebookings(prebookingData)
+      } catch (_error) {
+        setCases([])
+        setPrebookings([])
+      }
     }
   }
 
   useEffect(() => {
-    loadData()
+    void loadData()
   }, [user])
 
   const pendingCount = cases.filter((c) => c.status === "pending").length
@@ -237,7 +246,7 @@ export function HealthWorkerDashboard() {
       )}
 
       {activeTab === "medicine" && (
-        <MedicineSearch onPrebookingCreated={loadData} />
+        <MedicineSearch onPrebookingCreated={() => void loadData()} />
       )}
 
       {activeTab === "prebookings" && (
@@ -251,7 +260,7 @@ export function HealthWorkerDashboard() {
           onClose={() => setShowSubmitModal(false)}
           onSuccess={() => {
             setShowSubmitModal(false)
-            loadData()
+            void loadData()
           }}
         />
       )}

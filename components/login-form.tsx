@@ -8,14 +8,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, Heart, Stethoscope, Pill } from "lucide-react"
+import { AlertCircle, Heart } from "lucide-react"
 
 interface LoginFormProps {
   onLoginSuccess: () => void
 }
 
 export function LoginForm({ onLoginSuccess }: LoginFormProps) {
-  const { login, isLoading, switchRole } = useAuth()
+  const { login, isLoading } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -28,13 +28,8 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
     if (success) {
       onLoginSuccess()
     } else {
-      setError("Invalid email or password. Try one of the demo accounts.")
+      setError("Invalid email or password, or access is not granted.")
     }
-  }
-
-  const handleDemoLogin = (role: "health_worker" | "doctor" | "pharmacist") => {
-    switchRole(role)
-    onLoginSuccess()
   }
 
   return (
@@ -96,59 +91,6 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
               </Button>
             </form>
 
-            {/* Demo Access Section */}
-            <div className="mt-6 pt-6 border-t border-border">
-              <p className="text-sm text-muted-foreground text-center mb-4">
-                Demo Access (Click to login)
-              </p>
-              <div className="grid gap-3">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-3 h-auto py-3 bg-transparent"
-                  onClick={() => handleDemoLogin("health_worker")}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Heart className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-medium">Health Worker (ASHA/ANM)</div>
-                    <div className="text-xs text-muted-foreground">
-                      Submit cases, search medicines, prebook
-                    </div>
-                  </div>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-3 h-auto py-3 bg-transparent"
-                  onClick={() => handleDemoLogin("doctor")}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center">
-                    <Stethoscope className="w-5 h-5 text-accent" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-medium">Doctor</div>
-                    <div className="text-xs text-muted-foreground">
-                      Review cases, prescribe, make decisions
-                    </div>
-                  </div>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-3 h-auto py-3 bg-transparent"
-                  onClick={() => handleDemoLogin("pharmacist")}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-chart-4/20 flex items-center justify-center">
-                    <Pill className="w-5 h-5 text-chart-4" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-medium">Pharmacist</div>
-                    <div className="text-xs text-muted-foreground">
-                      Manage inventory, respond to prebookings
-                    </div>
-                  </div>
-                </Button>
-              </div>
-            </div>
           </CardContent>
         </Card>
 

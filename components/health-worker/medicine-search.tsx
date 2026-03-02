@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { searchMedicines, createPrebooking } from "@/lib/data-store"
+import { searchMedicines, createPrebooking } from "@/lib/api-client"
 import type { MedicineSearchResult } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -44,10 +44,14 @@ export function MedicineSearch({ onPrebookingCreated }: MedicineSearchProps) {
   const [requestedQuantity, setRequestedQuantity] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!searchQuery.trim()) return
-    const results = searchMedicines(searchQuery)
-    setSearchResults(results)
+    try {
+      const results = await searchMedicines(searchQuery)
+      setSearchResults(results)
+    } catch (_error) {
+      setSearchResults([])
+    }
     setHasSearched(true)
   }
 
@@ -64,12 +68,10 @@ export function MedicineSearch({ onPrebookingCreated }: MedicineSearchProps) {
     if (!user || !selectedMedicine) return
 
     setIsSubmitting(true)
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    createPrebooking({
+    await createPrebooking({
       medicineId: selectedMedicine.medicineId,
       medicineName: selectedMedicine.medicineName,
-      requestedQuantity: parseInt(requestedQuantity),
+      requestedQuantity: parseInt(requestedQuantity, 10),
       patientName,
       patientPhone,
       healthWorkerId: user.id,

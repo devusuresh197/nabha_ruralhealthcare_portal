@@ -8,7 +8,7 @@ import {
   updateMedicineStock,
   addMedicine,
   respondToPrebooking,
-} from "@/lib/data-store"
+} from "@/lib/api-client"
 import { mockPharmacies } from "@/lib/mock-data"
 import type { Medicine, PrebookingRequest } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -55,48 +55,57 @@ export function PharmacyDashboard() {
   // Get the pharmacy ID for this pharmacist (using first pharmacy for demo)
   const pharmacyId = mockPharmacies[0].id
 
-  const loadData = () => {
-    setMedicines(getMedicinesByPharmacy(pharmacyId))
-    setPrebookings(getPrebookingsByPharmacy(pharmacyId))
+  const loadData = async () => {
+    try {
+      const [medicineData, prebookingData] = await Promise.all([
+        getMedicinesByPharmacy(pharmacyId),
+        getPrebookingsByPharmacy(pharmacyId),
+      ])
+      setMedicines(medicineData)
+      setPrebookings(prebookingData)
+    } catch (_error) {
+      setMedicines([])
+      setPrebookings([])
+    }
   }
 
   useEffect(() => {
-    loadData()
+    void loadData()
   }, [])
 
   const pendingPrebookings = prebookings.filter((p) => p.status === "pending")
   const availableMedicines = medicines.filter((m) => m.quantity > 0)
   const outOfStockMedicines = medicines.filter((m) => m.quantity === 0)
 
-  const handleAddMedicine = () => {
+  const handleAddMedicine = async () => {
     if (!newMedicineName || !newMedicineQuantity) return
 
-    addMedicine(newMedicineName, parseInt(newMedicineQuantity), pharmacyId)
+    await addMedicine(newMedicineName, parseInt(newMedicineQuantity, 10), pharmacyId)
     setNewMedicineName("")
     setNewMedicineQuantity("")
     setShowAddMedicine(false)
-    loadData()
+    void loadData()
   }
 
-  const handleUpdateStock = () => {
+  const handleUpdateStock = async () => {
     if (!editingMedicine || !editQuantity) return
 
-    updateMedicineStock(editingMedicine.id, parseInt(editQuantity))
+    await updateMedicineStock(editingMedicine.id, parseInt(editQuantity, 10))
     setEditingMedicine(null)
     setEditQuantity("")
-    loadData()
+    void loadData()
   }
 
-  const handleRespond = (status: "confirmed" | "rejected") => {
+  const handleRespond = async (status: "confirmed" | "rejected") => {
     if (!respondingTo) return
 
-    respondToPrebooking(respondingTo.id, {
+    await respondToPrebooking(respondingTo.id, {
       status,
       expectedAvailabilityDate: status === "confirmed" ? availabilityDate : undefined,
     })
     setRespondingTo(null)
     setAvailabilityDate("")
-    loadData()
+    void loadData()
   }
 
   const formatDate = (dateString: string) => {

@@ -29,7 +29,7 @@ interface AppShellProps {
 }
 
 export function AppShell({ children, onLogout }: AppShellProps) {
-  const { user, switchRole } = useAuth()
+  const { user } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const getRoleIcon = () => {
@@ -142,22 +142,6 @@ export function AppShell({ children, onLogout }: AppShellProps) {
                       </span>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                    Switch Role (Demo)
-                  </DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => switchRole("health_worker")}>
-                    <Heart className="w-4 h-4 mr-2" />
-                    Health Worker
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => switchRole("doctor")}>
-                    <Stethoscope className="w-4 h-4 mr-2" />
-                    Doctor
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => switchRole("pharmacist")}>
-                    <Pill className="w-4 h-4 mr-2" />
-                    Pharmacist
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={onLogout} className="text-destructive">
                     <LogOut className="w-4 h-4 mr-2" />

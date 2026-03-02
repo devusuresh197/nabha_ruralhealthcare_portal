@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { updateCaseReview } from "@/lib/data-store"
+import { updateCaseReview } from "@/lib/api-client"
 import type { PatientCase, RiskLevel, CaseDecision } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -96,9 +96,7 @@ export function CaseReviewModal({
     if (!user || !decision) return
 
     setIsSubmitting(true)
-    await new Promise((resolve) => setTimeout(resolve, 800))
-
-    updateCaseReview(patientCase.id, {
+    await updateCaseReview(patientCase.id, {
       doctorId: user.id,
       doctorName: user.name,
       doctorRiskOverride: !acceptAI ? overrideRisk : undefined,

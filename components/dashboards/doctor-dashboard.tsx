@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { getPendingCases, getReviewedCases } from "@/lib/data-store"
+import { getPendingCases, getReviewedCases } from "@/lib/api-client"
 import type { PatientCase } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,13 +23,22 @@ export function DoctorDashboard() {
   const [selectedCase, setSelectedCase] = useState<PatientCase | null>(null)
   const [activeTab, setActiveTab] = useState<"pending" | "reviewed">("pending")
 
-  const loadData = () => {
-    setPendingCases(getPendingCases())
-    setReviewedCases(getReviewedCases())
+  const loadData = async () => {
+    try {
+      const [pending, reviewed] = await Promise.all([
+        getPendingCases(),
+        getReviewedCases(),
+      ])
+      setPendingCases(pending)
+      setReviewedCases(reviewed)
+    } catch (_error) {
+      setPendingCases([])
+      setReviewedCases([])
+    }
   }
 
   useEffect(() => {
-    loadData()
+    void loadData()
   }, [])
 
   const getRiskBadgeVariant = (risk: string) => {

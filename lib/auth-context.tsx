@@ -7,15 +7,14 @@ import {
   useCallback,
   type ReactNode,
 } from "react"
-import type { User, UserRole } from "./types"
-import { mockUsers } from "./mock-data"
+import type { User } from "./types"
+import { loginUser } from "./api-client"
 
 interface AuthContextType {
   user: User | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
-  switchRole: (role: UserRole) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -24,41 +23,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const login = useCallback(async (email: string, _password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true)
-    
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    
-    // Find user by email (mock authentication)
-    const foundUser = mockUsers.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase()
-    )
-    
-    if (foundUser) {
-      setUser(foundUser)
+
+    try {
+      const foundUser = await loginUser(email, password)
+      if (foundUser) {
+        setUser(foundUser)
+        return true
+      }
+      return false
+    } catch (_error) {
+      return false
+    } finally {
       setIsLoading(false)
-      return true
     }
-    
-    setIsLoading(false)
-    return false
   }, [])
 
   const logout = useCallback(() => {
     setUser(null)
   }, [])
 
-  // For demo purposes: switch between roles easily
-  const switchRole = useCallback((role: UserRole) => {
-    const userWithRole = mockUsers.find((u) => u.role === role)
-    if (userWithRole) {
-      setUser(userWithRole)
-    }
-  }, [])
-
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, switchRole }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )
