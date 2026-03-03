@@ -67,6 +67,7 @@ Do NOT use in production.
 
 ```bash
 npm install
+```
 ## ⚙️ Environment Configuration
 
 To run the project locally, create a `.env.local` file in the root directory of the project and add the following environment variables:
@@ -78,13 +79,15 @@ MONGODB_DB_NAME=rural_health_portal
 # Optional (for AI-based triage)
 GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash
+```
 ## ▶️ Run the Development Server
 
 After completing the installation and environment configuration steps, start the development server using:
-
 ```bash
+
 npm run dev
-## 🧠 AI-Assisted Triage System
+```
+### 🧠 AI-Assisted Triage System
 
 The platform incorporates an AI-assisted triage system designed to enhance early clinical risk assessment and improve case prioritization. This feature supports healthcare professionals by providing an initial evaluation while ensuring that final medical decisions remain human-led.
 
