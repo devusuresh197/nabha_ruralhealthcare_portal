@@ -20,6 +20,11 @@ let prebookings: PrebookingRequest[] = [...mockPrebookings]
 
 // ============ CASE FUNCTIONS ============
 
+export type CaseInputForRisk = Omit<
+  PatientCase,
+  "id" | "createdAt" | "status" | "aiRiskLevel"
+>
+
 export function getCases(): PatientCase[] {
   return cases.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -43,9 +48,10 @@ export function getCaseById(caseId: string): PatientCase | undefined {
 }
 
 export function createCase(
-  caseData: Omit<PatientCase, "id" | "createdAt" | "status" | "aiRiskLevel">
+  caseData: CaseInputForRisk,
+  aiRiskOverride?: RiskLevel
 ): PatientCase {
-  const aiRiskLevel = calculateAIRisk(caseData)
+  const aiRiskLevel = aiRiskOverride ?? calculateRuleBasedRisk(caseData)
   
   const newCase: PatientCase = {
     ...caseData,
@@ -86,7 +92,7 @@ export function updateCaseReview(
 
 // Simple rule-based AI risk calculation
 function calculateAIRisk(
-  caseData: Omit<PatientCase, "id" | "createdAt" | "status" | "aiRiskLevel">
+  caseData: CaseInputForRisk
 ): RiskLevel {
   let riskScore = 0
   
@@ -117,6 +123,10 @@ function calculateAIRisk(
   if (riskScore >= 5) return "High"
   if (riskScore >= 2) return "Medium"
   return "Low"
+}
+
+export function calculateRuleBasedRisk(caseData: CaseInputForRisk): RiskLevel {
+  return calculateAIRisk(caseData)
 }
 
 // ============ MEDICINE FUNCTIONS ============

@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server"
 import {
+  calculateRuleBasedRisk,
   createCase,
   getCases,
   getCasesByHealthWorker,
   getPendingCases,
   getReviewedCases,
 } from "@/lib/data-store"
+import { assessCaseRiskWithAI } from "@/backend/ai-triage"
+
+export const runtime = "nodejs"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -53,7 +57,7 @@ export async function POST(request: Request) {
     )
   }
 
-  const createdCase = createCase({
+  const caseInput = {
     patientName: body.patientName,
     patientAge: Number(body.patientAge),
     patientGender: body.patientGender,
@@ -64,7 +68,19 @@ export async function POST(request: Request) {
     additionalNotes: body.additionalNotes,
     healthWorkerId: body.healthWorkerId,
     healthWorkerName: body.healthWorkerName,
-  })
+  }
+
+  let aiRiskLevel = calculateRuleBasedRisk(caseInput)
+  try {
+    const aiResult = await assessCaseRiskWithAI(caseInput)
+    if (aiResult?.riskLevel) {
+      aiRiskLevel = aiResult.riskLevel
+    }
+  } catch (_error) {
+    // Fall back to rule-based risk when external AI is unavailable.
+  }
+
+  const createdCase = createCase(caseInput, aiRiskLevel)
 
   return NextResponse.json(createdCase, { status: 201 })
 }
